@@ -16,3 +16,6 @@ deserializer.read_tx()
 ```
 python3 ./test.py
 ```
+
+### Deserialization Problems
+* Can't Deserialize txType of 0, 2, 3, 4
