@@ -37,13 +37,64 @@ class DecredTxParser(object):
         self.cursor = start
 
     def read_tx(self):
-        txType = self._read_le_uint16()
         version = self._read_le_uint16()
+        txType = self._read_le_uint16()
         print('***TX Details')
         print('version: '+ str(version))
         print('txType: '+ str(txType))
         print('')
 
+        if txType != 2 and txType != 3 and txType != 4:
+            self._read_input(txType)  
+            self._read_output()
+
+            lock_time = self._read_le_uint32() #tx root
+            expiry = self._read_le_uint32() #tx root
+            print('lock_time: '+ str(lock_time))
+            print('expiry: '+ str(expiry))
+            print('')
+
+        self._read_witness(txType)
+
+
+    def _read_witness(self, txType):
+        #Parse Witness
+        if txType == 0 or txType == 2:
+            num_witness = self._read_varint()  
+            print('# of witness: '+ str(num_witness))
+            for j in range(num_witness):
+                value = self._read_le_int64()        #witness
+                blockHeight = self._read_le_uint32() #witness
+                blockIndex = self._read_le_uint32()  #witness
+                script_length = self._read_varint()
+                script = self._read_nbytes(script_length) #witness
+                print('value: '+ str(value))
+                print('blockHeight: '+ str(blockHeight))
+                print('blockIndex: '+ str(blockIndex))
+                print('script_length: '+ str(script_length))
+                print('script: '+ str(script))
+        if txType == 3:
+            num_witness = self._read_varint()  
+            print('# of witness: '+ str(num_witness))
+            for j in range(num_witness):
+                script_length = self._read_varint()
+                script = self._read_nbytes(script_length) #witness
+                print('script_length: '+ str(script_length))
+                print('script: '+ str(script)) 
+        if txType == 4:
+            num_witness = self._read_varint()  
+            print('# of witness: '+ str(num_witness))
+            for j in range(num_witness):
+                value = self._read_le_int64()        #witness
+                script_length = self._read_varint()
+                script = self._read_nbytes(script_length) #witness
+                print('value: '+ str(value))
+                print('script_length: '+ str(script_length))
+                print('script: '+ str(script))               
+
+
+    def _read_input(self, txType):
+        #Parse Inputs
         num_inputs = self._read_varint()
         print('# of inputs: '+ str(num_inputs))
         for i in range(num_inputs):
@@ -64,20 +115,10 @@ class DecredTxParser(object):
                 prev_idx = self._read_le_uint32() #non-witness
                 tree = self.read_int8()           #non-witness
                 sequence = self._read_le_uint32() #non-witness
-                value = self._read_le_int64()        #witness
-                blockHeight = self._read_le_uint32() #witness
-                blockIndex = self._read_le_uint32()  #witness
-                script_length = self._read_varint()
-                script = self._read_nbytes(script_length) #witness
                 print('prev_hash: '+ bytes(prev_hash).hex())
                 print('prev_idx: '+ str(prev_idx))
                 print('tree: '+ str(tree))
                 print('sequence: '+ str(sequence))
-                print('value: '+ str(value))
-                print('blockHeight: '+ str(blockHeight))
-                print('blockIndex: '+ str(blockIndex))
-                print('script_length: '+ str(script_length))
-                print('script: '+ str(script))
             #only prefix    
             if txType == 1:
                 prev_hash = self._read_nbytes(32) #non-witness
@@ -87,19 +128,7 @@ class DecredTxParser(object):
                 print('prev_hash: '+ bytes(prev_hash).hex())
                 print('prev_idx: '+ str(prev_idx))
                 print('tree: '+ str(tree))
-                print('sequence: '+ str(sequence))  
-            #only witness    
-            if txType == 2:
-                value = self._read_le_int64()        #witness
-                blockHeight = self._read_le_uint32() #witness
-                blockIndex = self._read_le_uint32()  #witness
-                script_length = self._read_varint()
-                script = self._read_nbytes(script_length) #witness
-                print('value: '+ str(value))
-                print('blockHeight: '+ str(blockHeight))
-                print('blockIndex: '+ str(blockIndex))
-                print('script_length: '+ str(script_length))
-                print('script: '+ str(script)) 
+                print('sequence: '+ str(sequence))   
             #subset of witness - value + script      
             if txType == 3:
                 script_length = self._read_varint()
@@ -115,8 +144,11 @@ class DecredTxParser(object):
                 print('script_length: '+ str(script_length))
                 print('script: '+ str(script))
 
-            print('')
+        print('')
 
+    
+    def _read_output(self):
+        #Parse Outputs
         num_outputs = self._read_varint()    
         print('# of outputs: '+ str(num_outputs))
         for i in range(num_outputs):
@@ -130,13 +162,6 @@ class DecredTxParser(object):
             print('script_length: '+ str(script_length))
             print('script: '+ str(script))
             print('')
-
-    
-    def _read_output(self):
-        return TxOutput(
-            self._read_le_int64(),  # value
-            self._read_varbytes(),  # pk_script
-        )
 
     def _read_byte(self):
         cursor = self.cursor
