@@ -17,5 +17,6 @@ deserializer.read_tx()
 python3 ./test.py
 ```
 
-### Deserialization Problems
-* Can't Deserialize txType of 0, 2, 3, 4
+### Deserialization
+* Supporting deserialization of txType(s) 0, 1, 2, 3, 4
+* https://docs.decred.org/advanced/transaction-details/#serialization-formats
