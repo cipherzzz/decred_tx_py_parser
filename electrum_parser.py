@@ -126,12 +126,12 @@ class DecredTxParser(object):
             value = self._read_le_int64()
             blockHeight = self._read_le_uint32()
             blockIndex = self._read_le_uint32()
-            script = self._read_nbytes(self._read_varint())
+            script = self._read_varbytes()
         if txType == 3:
-            script = self._read_nbytes(self._read_varint())
+            script = self._read_varbytes()
         if txType == 4:
             value = self._read_le_int64()
-            script = self._read_nbytes(self._read_varint())
+            script = self._read_varbytes()
 
         return TxDecredWitness(
             value,
@@ -148,7 +148,7 @@ class DecredTxParser(object):
         return TxDecredInput(
             self._read_nbytes(32),  #prev_hash
             self._read_le_uint32(), #prev_idx
-            self.read_int8(),       #tree
+            self._read_byte(),       #tree
             self._read_le_uint32() #sequence
         )
     
@@ -160,7 +160,7 @@ class DecredTxParser(object):
         return TxDecredOutput(
             self._read_le_int64(),                   #value
             self._read_le_uint16(),                  #version
-            self._read_nbytes(self._read_varint()),  #script
+            self._read_varbytes(),  #script
         )
 
     def _read_byte(self):
@@ -211,9 +211,4 @@ class DecredTxParser(object):
     def _read_le_uint64(self):
         result, = unpack_uint64_from(self.binary, self.cursor)
         self.cursor += 8
-        return result
-
-    def read_int8(self):
-        n = self.binary[self.cursor]
-        self.cursor += 1
-        return n    
+        return result   
